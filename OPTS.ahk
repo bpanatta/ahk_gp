@@ -4,18 +4,94 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 
+;Initialization
+CoordMode Pixel, Screen
+CoordMode Mouse, Screen
+
 ; Variables
 char := "shanks"
 ;char := "sabo"
 
+
 ; Functions
+RunEmulator()
+{
+	Run, "C:\Users\Bruno\Desktop\ONE PIECE THOUSAND STORM.lnk", , UseErrorLevel
+	if ErrorLevel <> ERROR
+	{
+		Sleep, 40000
+		Loop, 10
+		{
+			Send, {G down}
+			Sleep, 50
+			Send, {G up}
+			Sleep, 1000
+		}
+		
+		; Close gifts gained pop-up
+		Sleep, 60000
+		ClickYes("bottom")
+		
+		Sleep, 1000
+		if (IsAtHome())
+		{
+			;PressKey("G")
+		}
+		
+		return true
+	}
+	
+	return false
+}
+CloseEmulator()
+{
+	IfWinExist, BlueStacks
+	{
+		WinActivate, BlueStacks
+		WinClose BlueStacks
+		Sleep, 2000
+		MouseClick, L, 1056, 571
+	}
+}
+RestartEmulator()
+{
+	CloseEmulator()
+	Sleep, 60000
+	Loop, 3
+	{
+		if (RunEmulator())
+			break
+	}
+}
+
+PressKey(key)
+{	
+	Send, {%key% down}
+	Sleep, 50
+	Send, {%key% up}
+}
+
+IsAtHome()
+{
+	imgBasePath := "imgs/missions"
+	
+	Loop, 2
+	{
+		imgSrc := % imgBasePath . A_Index . ".png"
+		ImageSearch pX, pY, 700, 800, 880, 970, %imgSrc%
+		
+		if (pX and pY)
+			return true
+	}
+	
+	return false
+}
+
 ClickYes(position)
 {
-	;IfNotExist, imgs/btn-yes.png
-		;MsgBox, File not found.
 	imgBasePath := "imgs/btn-yes"
 	
-	Loop, 3
+	Loop, 4
 	{
 		imgSrc := % imgBasePath . A_Index . ".png"
 		if (position = "center")
@@ -25,6 +101,10 @@ ClickYes(position)
 		else if (position = "middle")
 		{
 			ImageSearch pX, pY, 990, 510, 1170, 590, %imgSrc%
+		}
+		else if (position = "bottom")
+		{
+			ImageSearch pX, pY, 870, 860, 1055, 960, imgs/btn-next.png
 		}
 		else
 		{
@@ -404,18 +484,25 @@ PlayFullGame2(gameNum, stageQty, bossDificulty)
 		if (ClickBack("bottom"))
 			play := false
 		
-		Send, G
-		Send, D
+		PressKey("G")
+		PressKey("D")
 	}
 	
 	While (endGame)
 	{
+		; Restart emulator and stop running if is not evolving after aprox 4 minutes
+		if (A_Index > 65)
+		{
+			RestartEmulator()
+			return false
+		}
+		
 		Loop 4
 		{
-			Sleep, 800
-			Send, T
-			Send, G
-			Send, D
+			Sleep, 700
+			PressKey("T")
+			PressKey("G")
+			PressKey("D")
 		}
 		
 		Loop, 2
@@ -456,6 +543,11 @@ PlayEpilogue()
 	}
 }
 
+
+; Start the OPTS game
++B::
+RunEmulator()
+return
 
 ; Scroll down
 #IfWinActive BlueStacks
@@ -519,7 +611,8 @@ Sleep, 300
 #IfWinActive BlueStacks
 Loop %nPlays%
 {
-	PlayFullGame2(nGame, nStages, bossDificulty)
+	if (!PlayFullGame2(nGame, nStages, bossDificulty))
+		break
 	Sleep, 8000
 }
 MsgBox, Finished playing
