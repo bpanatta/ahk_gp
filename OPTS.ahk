@@ -28,14 +28,18 @@ RunEmulator()
 			Sleep, 1000
 		}
 		
-		; Close gifts gained pop-up
-		Sleep, 60000
-		ClickYes("bottom")
+		ClickFullscreen()
 		
-		Sleep, 1000
-		if (IsAtHome())
+		; Close gifts gained pop-up
+		Sleep, 80000
+		if (!IsAtHome())
 		{
-			;PressKey("G")
+			if (!ClickYes("bottom"))
+				PressKey("G")
+			Sleep, 2000
+			
+			if (!IsAtHome())
+				ClickBack("bottom")
 		}
 		
 		return true
@@ -43,6 +47,7 @@ RunEmulator()
 	
 	return false
 }
+
 CloseEmulator()
 {
 	IfWinExist, BlueStacks
@@ -87,11 +92,43 @@ IsAtHome()
 	return false
 }
 
+IsCheckboxSelected(position)
+{
+	imgBasePath := "imgs/check-true"
+	
+	Loop, 4
+	{
+		imgSrc := % imgBasePath . A_Index . ".png"
+		if (position = "m1")
+		{
+			ImageSearch pX, pY, 800, 450, 855, 505, %imgSrc%
+		}
+		else if (position = "m2")
+		{
+			ImageSearch pX, pY, 800, 506, 855, 560, %imgSrc%
+		}
+		
+		if (pX and pY)
+			return true
+	}
+	
+	return false
+}
+
+ClickFullscreen()
+{
+	MouseClick, L, 1146, 41
+}
+
 ClickYes(position)
 {
 	imgBasePath := "imgs/btn-yes"
+	loopSize := 4
 	
-	Loop, 4
+	if (position = "middle-col")
+		loopSize := 9
+	
+	Loop, %loopSize%
 	{
 		imgSrc := % imgBasePath . A_Index . ".png"
 		if (position = "center")
@@ -101,6 +138,10 @@ ClickYes(position)
 		else if (position = "middle")
 		{
 			ImageSearch pX, pY, 990, 510, 1170, 590, %imgSrc%
+		}
+		else if (position = "middle-col")
+		{
+			ImageSearch pX, pY, 1000, 520, 1125, 820, %imgSrc%
 		}
 		else if (position = "bottom")
 		{
@@ -481,17 +522,20 @@ PlayFullGame2(gameNum, stageQty, bossDificulty)
 			play := false
 			endGame := true
 		}
+		Sleep, 200
 		if (ClickBack("bottom"))
 			play := false
 		
+		Sleep, 200
 		PressKey("G")
+		Sleep, 200
 		PressKey("D")
 	}
 	
 	While (endGame)
 	{
 		; Restart emulator and stop running if is not evolving after aprox 4 minutes
-		if (A_Index > 65)
+		if (A_Index > 64)
 		{
 			RestartEmulator()
 			return false
@@ -499,19 +543,60 @@ PlayFullGame2(gameNum, stageQty, bossDificulty)
 		
 		Loop 4
 		{
-			Sleep, 700
+			Sleep, 300
 			PressKey("T")
+			Sleep, 200
 			PressKey("G")
+			Sleep, 200
 			PressKey("D")
 		}
 		
 		Loop, 2
 		{
+			Sleep, 800
 			if (ClickBack("bottom"))
 				endGame := false
-			Sleep, 800
 		}
 	}
+	
+	return true
+}
+
+SellCards()
+{
+	; Click Auto-select
+	MouseClick, L, 1133, 919
+	Sleep, 500
+	
+	; Verify checkboxes and select if not selected
+	if (!IsCheckboxSelected("m1"))
+		MouseClick, L, 830, 475
+	Sleep, 500
+	if (!IsCheckboxSelected("m2"))
+		MouseClick, L, 830, 540
+	MouseMove, 1240, 500
+	Sleep, 1000
+	
+	if (ClickYes("middle-col"))
+	{
+		MouseMove, 1240, 500
+		Sleep, 1000
+		if (ClickYes("middle-col"))
+		{
+			MouseMove, 1240, 500
+			Sleep, 1000
+			if (ClickYes("middle-col"))
+			{
+				MouseMove, 1240, 500
+				Sleep, 1000
+				ClickYes("middle-col")
+				
+				return true
+			}
+		}
+	}
+	
+	return false
 }
 
 PlayPrologue()
@@ -713,6 +798,13 @@ Loop %nDificulties%
 }
 
 MsgBox, Finished playing
+return
+
+!+S::
+While SellCards()
+{
+	Sleep, 2000
+}
 return
 
 
